@@ -49,7 +49,7 @@ namespace MemoryServer2
             else return false;
         }
 
-        public void registerUser(string login, string password)
+        public bool registerUser(string login, string password)
         {
             string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\wojci\\source\\repos\\MemoryServer2\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
 
@@ -72,15 +72,21 @@ namespace MemoryServer2
                                 register.Parameters.AddWithValue("@Login", login);
                                 register.Parameters.AddWithValue("@Password", password);
                                 register.ExecuteNonQuery();
-                                System.Console.WriteLine("siema, zarejestrowal sie gracz "+login+" z haslem: "+password);
+                                System.Console.WriteLine("siema, zarejestrowal sie gracz " + login);
+                                return true;
                             }
                             catch (Exception ex)
                             {
                                 Console.Write(ex);
+                                return false;
                             }
                         }
                     }
-                    else System.Console.WriteLine("chyba ktos taki juz jest byku x)");
+                    else
+                    {
+                        System.Console.WriteLine("chyba ktos taki juz jest byku x)");
+                        return false;
+                    }
                 }
 
             }

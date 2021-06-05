@@ -25,20 +25,31 @@ namespace MemoryServer2
                 String data = reader.ReadLine();
                 Console.WriteLine(data);
                 string[] logData = checkMessage(data);
-
-                if (dc.checkUserData(logData[0], logData[1]))
+                if (logData[0] == "log")
                 {
+                    if (dc.checkUserData(logData[1], logData[2]))
+                    {
 
-                    Console.WriteLine("1");
-                    logged = true;
+                        Console.WriteLine("1");
+                        logged = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("0");
+                    }
                 }
-                else
+                else if (logData[0] == "reg")
                 {
-                    Console.WriteLine("0");
+                    if (dc.registerUser(logData[1], logData[2]))
+                    {
+                        writer.WriteLine("true");
+                    }
+                    else writer.WriteLine("false");
                 }
+                else Console.WriteLine("wrong command");
             } while (!logged);
 
-
+            
             while (logged)
             {
                 String choice = reader.ReadLine();
@@ -57,5 +68,6 @@ namespace MemoryServer2
         {
             return s.Split(' ');
         }
+
     }
 }
