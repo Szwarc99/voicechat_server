@@ -8,20 +8,17 @@ namespace MemoryServer2
 {
     class Room
     {
-        private Guid id;
+        public int id;
         private string password;
         public bool begun;
         public int activeUsers;
+        public int[] playerID;
         public bool isPrivate;
-        public Room(bool isPrivate, string password)
+        public Room(int id, bool isPrivate, string password)
         {
-            this.id = Guid.NewGuid();
             this.isPrivate = isPrivate;
             this.password = password;
-        }
-        public Guid getID()
-        {
-            return this.id;
+            this.id = id;
         }
         public string Password
         {
@@ -35,7 +32,6 @@ namespace MemoryServer2
         public void leave()
         {
             activeUsers--;
-
         }
     }
 }
