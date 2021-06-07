@@ -12,7 +12,6 @@
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-DatabaseConnector.cs
 
 # Build results
 [Dd]ebug/
@@ -246,6 +245,11 @@ UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
 *.rptproj.bak
+
+# SQL Server files
+*.mdf
+*.ldf
+*.ndf
 
 # Business Intelligence projects
 *.rdl.data

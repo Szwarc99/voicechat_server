@@ -13,8 +13,7 @@ namespace MemoryServer2
         {
             try
             {
-                ServerTCP server = new ServerTCP(IPAddress.Parse("127.0.0.1"), 8080);
-                server.Start();
+                ServerTCP server = new ServerTCP(2048);
             }
             catch (Exception ex)
             {

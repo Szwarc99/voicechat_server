@@ -8,29 +8,34 @@ namespace MemoryServer2
 {
     class Room
     {
-        public Guid id;
+        public int id;
         private string password;
         public bool begun;
         public int activeUsers;
-        public int[] playerID;
+        public List<Guid> playerIDs;
         public bool isPrivate;
-        public Room(bool isPrivate, string password)
+        public Room(int id, bool isPrivate, string password)
         {
             this.isPrivate = isPrivate;
             this.password = password;
-            this.id = new Guid();
+            this.id = id;
         }
         public string Password
         {
             get { return password; }
             set { password = ""; }
         }
-        public void join()
+        public void join(Guid player, string password)
         {
-            activeUsers++;
+            if (this.password == password)
+            {
+                playerIDs.Append(player);
+                activeUsers++;
+            }
         }
-        public void leave()
+        public void leave(Guid player)
         {
+            playerIDs.Remove(player);
             activeUsers--;
         }
     }

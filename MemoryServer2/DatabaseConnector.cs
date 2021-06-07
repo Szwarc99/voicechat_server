@@ -55,10 +55,10 @@ namespace MemoryServer2
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                string queryString = "INSERT INTO dbo.Player (Login, Password) VALUES (@Login, @Password);";
+                string queryString = "INSERT INTO dbo.Player (Id, Login, Password) VALUES (@Id, @Login, @Password);";
                 string loginCheck = "SELECT COUNT(*) from dbo.Player WHERE Login= @Login";
 
-                using(SqlCommand check = new SqlCommand(loginCheck, conn))
+                using (SqlCommand check = new SqlCommand(loginCheck, conn))
                 {
                     check.Parameters.AddWithValue("@Login", login);
                     conn.Open();
@@ -69,10 +69,13 @@ namespace MemoryServer2
                         {
                             try
                             {
+                                Guid guid = Guid.NewGuid();
+                                string id = guid.ToString();
                                 register.Parameters.AddWithValue("@Login", login);
                                 register.Parameters.AddWithValue("@Password", password);
+                                register.Parameters.AddWithValue("@Id", id);
                                 register.ExecuteNonQuery();
-                                System.Console.WriteLine("siema, zarejestrowal sie gracz " + login);
+                                System.Console.WriteLine("siema, zarejestrowal sie gracz " + login + " " + id);
                                 return true;
                             }
                             catch (Exception ex)

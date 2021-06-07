@@ -12,10 +12,10 @@ namespace MemoryServer2
 {
     class Menu
     {
-        public void BeginDataTransmission(NetworkStream stream)
+        public void BeginDataTransmission(NetworkStream stream, List<Room> roms)
         {
             DatabaseConnector dc = new DatabaseConnector();
-            List<Room> rooms = new List<Room>();
+            List<Room> rooms = roms;
             bool logged = false;
             StreamWriter writer = new StreamWriter(stream);
             writer.AutoFlush = true;
@@ -57,6 +57,7 @@ namespace MemoryServer2
             while (logged)
             {
                 String data = reader.ReadLine();
+                Console.WriteLine(data);
                 string[] logData = checkMessage(data);
                 if (data == "logout")
                 {
@@ -65,21 +66,33 @@ namespace MemoryServer2
                 }
                 else if (logData[0]=="ref")
                 {
-                    foreach (Room room in rooms)
+                    if (rooms.Count != 0)
                     {
-                        string msg = "rom " + room.id + " " + room.isPrivate + " " + room.activeUsers + " " + room.begun;
-
-                        if (room == rooms.Last())
+                        foreach (Room room in rooms)
                         {
-                            msg = msg + " end";
+                            string msg = "rom " + room.id + " " + room.isPrivate + " " + room.activeUsers + " " + room.begun;
+
+                            if (room == rooms.Last())
+                            {
+                                msg = msg + " end";
+                            }
+                            writer.Write(msg);
                         }
-                        writer.Write(msg);
                     }
+                    else writer.Write("     end");
                 }
                 else if (logData[0] == "crm")
                 {
-                    rooms.Add(new Room(bool.Parse(logData[1]), logData[2]));
-                    writer.Write("1");
+                    rooms.Add(new Room(rooms.Count, bool.Parse(logData[1]), logData[2]));
+                    writer.WriteLine(rooms[rooms.Count - 1].id);
+                }
+                else if (logData[0] == "jrm")
+                {
+                    rooms[int.Parse(logData[1])].join(Guid.Parse(logData[2]), logData[3]);
+                }
+                else if (logData[0] == "lrm")
+                {
+                    rooms[int.Parse(logData[1])].leave(Guid.Parse(logData[2]));
                 }
             }
         }
