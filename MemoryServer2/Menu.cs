@@ -20,7 +20,6 @@ namespace MemoryServer2
             StreamWriter writer = new StreamWriter(stream);
             writer.AutoFlush = true;
             StreamReader reader = new StreamReader(stream);
-            rooms.Add(new Room(0, false, "admin"));
 
             do
             {
@@ -76,7 +75,12 @@ namespace MemoryServer2
                         }
                         writer.Write(msg);
                     }
-                }    
+                }
+                else if (logData[0] == "crm")
+                {
+                    rooms.Add(new Room(bool.Parse(logData[1]), logData[2]));
+                    writer.Write("1");
+                }
             }
         }
         private string[] checkMessage(string s)

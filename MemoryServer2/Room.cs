@@ -8,17 +8,17 @@ namespace MemoryServer2
 {
     class Room
     {
-        public int id;
+        public Guid id;
         private string password;
         public bool begun;
         public int activeUsers;
         public int[] playerID;
         public bool isPrivate;
-        public Room(int id, bool isPrivate, string password)
+        public Room(bool isPrivate, string password)
         {
             this.isPrivate = isPrivate;
             this.password = password;
-            this.id = id;
+            this.id = new Guid();
         }
         public string Password
         {

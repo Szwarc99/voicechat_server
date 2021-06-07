@@ -12,6 +12,7 @@
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
+DatabaseConnector.cs
 
 # Build results
 [Dd]ebug/
@@ -42,6 +43,7 @@ Generated\ Files/
 # NUNIT
 *.VisualState.xml
 TestResult.xml
+
 
 # Build Results of an ATL Project
 [Dd]ebugPS/
