@@ -11,7 +11,6 @@ namespace MemoryServer2
 {
     class DatabaseConnector
     {
-
         public DatabaseConnector()
         {
         }
@@ -20,7 +19,7 @@ namespace MemoryServer2
         }
         static void editUserPassword(string login, string newPassword)
         {
-            string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\wojci\\source\\repos\\MemoryServer2\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
+            string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Piotrek\\source\\repos\\MemoryServer3\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
             string queryString = "UPDATE dbo.Player SET Password = @Password WHERE Login=@Login";
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
@@ -36,7 +35,7 @@ namespace MemoryServer2
 
         public bool checkUserData(string login, string password)
         {
-            string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\wojci\\source\\repos\\MemoryServer2\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
+            string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Piotrek\\source\\repos\\MemoryServer3\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
 
             SqlConnection conn = new SqlConnection(connectionString);
             SqlDataAdapter sda = new SqlDataAdapter("SELECT COUNT(*) FROM dbo.Player WHERE Login= '" + login + "' AND Password= '" + password + "'", conn);
@@ -51,7 +50,7 @@ namespace MemoryServer2
 
         public bool registerUser(string login, string password)
         {
-            string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\wojci\\source\\repos\\MemoryServer2\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
+            string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=C:\\Users\\Piotrek\\source\\repos\\MemoryServer3\\MemoryServer2\\MemoryDatabase.mdf;Integrated Security=True";
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {

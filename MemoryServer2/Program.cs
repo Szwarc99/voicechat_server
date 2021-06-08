@@ -13,7 +13,7 @@ namespace MemoryServer2
         {
             try
             {
-                ServerTCP server = new ServerTCP(2048);
+                ServerTCP server = new ServerTCP(8080);
             }
             catch (Exception ex)
             {

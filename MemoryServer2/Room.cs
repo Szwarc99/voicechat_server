@@ -13,7 +13,7 @@ namespace MemoryServer2
         public bool begun;
         public int activeUsers;
         public List<Guid> playerIDs;
-        public bool isPrivate;
+        public bool isPrivate;        
         public Room(int id, bool isPrivate, string password)
         {
             this.isPrivate = isPrivate;
