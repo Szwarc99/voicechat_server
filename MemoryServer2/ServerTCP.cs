@@ -135,11 +135,12 @@ namespace MemoryServer2
                     }
                     else if (logData[0] == "jrm")
                     {
-                        rooms[int.Parse(logData[1])].join(Guid.Parse(logData[2]), logData[3]);
+                        rooms[int.Parse(logData[1])].join(logData[2], logData[3]);
+                        write("ok");
                     }
                     else if (logData[0] == "lrm")
                     {
-                        rooms[int.Parse(logData[1])].leave(Guid.Parse(logData[2]));
+                        rooms[int.Parse(logData[1])].leave(logData[2]);
                     }
                 }
             }
