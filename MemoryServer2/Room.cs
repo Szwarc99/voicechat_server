@@ -25,19 +25,25 @@ namespace MemoryServer2
             get { return password; }
             set { password = ""; }
         }
+        
         public void join(string player, string password)
         {
-            if (this.password == password)
-            {
-               //playerIDs.Append(player);
-                playerIDs.Add(player);
-                activeUsers++;
+            lock (this)
+            { 
+                if (this.password == password)
+                {
+                    playerIDs.Add(player);
+                    activeUsers++;
+                }
             }
         }
         public void leave(string player)
         {
-            playerIDs.Remove(player);
-            activeUsers--;
+            lock(this)
+            { 
+                playerIDs.Remove(player);
+                activeUsers--;
+            }
         }
     }
 }

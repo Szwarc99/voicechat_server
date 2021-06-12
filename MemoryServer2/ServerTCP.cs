@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,12 +10,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace MemoryServer2
-{
+{  
     class ServerTCP
     {
-        private TcpListener _server;
-        private NetworkStream stream;
+        private TcpListener _server;        
         private Boolean _isRunning;
+
+        private ConcurrentDictionary<int, Room> roomDict = new ConcurrentDictionary<int, Room>();
+        private int nextRoomId = 0;
 
         public ServerTCP(int port)
         {
@@ -25,10 +28,13 @@ namespace MemoryServer2
             
             LoopClients();
         }
+        private int getNextId()
+        {
+            return Interlocked.Increment(ref nextRoomId)-1;
+        }
 
         public void LoopClients()
-        {
-            List<Room> rooms = new List<Room>();
+        {            
             while (_isRunning)
             {
                 // wait for client connection
@@ -39,18 +45,15 @@ namespace MemoryServer2
                 // client found.
                 // create a thread to handle communication
 
-                Thread t = new Thread(unused => HandleClient(rooms,newClient)
+                Thread t = new Thread(unused => HandleClient(newClient)
   );
-                t.Start(newClient);
+                t.Start();
             }
         }
 
-        public void HandleClient(List<Room> roms, object obj)
+        public void HandleClient(TcpClient client)
         {
-            List<Room> rooms = roms;
-            // retrieve client from parameter passed to thread
-            TcpClient client = (TcpClient)obj;
-            stream = client.GetStream();
+            NetworkStream stream = client.GetStream();
 
             // sets two streams
             //StreamWriter sWriter = new StreamWriter(client.GetStream(), Encoding.ASCII);
@@ -69,7 +72,7 @@ namespace MemoryServer2
                 do
                 {
                     
-                    sData = read();
+                    sData = CommProtocol.read(stream);
                     Console.WriteLine(sData);
                     string[] logData = checkMessage(sData);
                     if (logData[0] == "log")
@@ -78,12 +81,12 @@ namespace MemoryServer2
                         {
 
                             Console.WriteLine("user logged");
-                            write("1");
+                            CommProtocol.write(stream, "1");
                             logged = true;
                         }
                         else
                         {
-                            write("!");
+                            CommProtocol.write(stream, "!");
                             Console.WriteLine("wrong login data");
                         }
                     }
@@ -91,22 +94,27 @@ namespace MemoryServer2
                     {
                         if (dc.registerUser(logData[1], logData[2]))
                         {
-                            write("1");
+                            CommProtocol.write(stream, "1");
                         }
-                        else write("!");
+                        else CommProtocol.write(stream, "!");
                     }
                     else Console.WriteLine("wrong command");
                 } while (!logged);
 
                 while (logged)
-                {                    
-                    sData = read();
+                {
+                    sData = CommProtocol.read(stream);
                     Console.WriteLine(sData);
                     string[] logData = checkMessage(sData);
+
+                    var rooms = this.roomDict.ToArray().Select(x => x.Value).ToList();
+                    rooms.Sort((x, y) => x.id - y.id);
+
                     if (sData == "logout")
                     {
                         Thread.Sleep(2000);
                         logged = false;
+                        bClientConnected = false;
                     }
                     else if (logData[0] == "ref")
                     {                        
@@ -121,17 +129,18 @@ namespace MemoryServer2
 
                                 sb.Append(msg);                               
                             }                            
-                            write(sb.ToString());
-                            Console.WriteLine("sb: " + sb);
+                            CommProtocol.write(stream, sb.ToString());
+                            Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint).Port.ToString()+ " " + sb);
 
 
                         }
-                        else write("~");
+                        else CommProtocol.write(stream, "~");
                     }
                     else if (logData[0] == "crm")
                     {
-                        rooms.Add(new Room(rooms.Count, bool.Parse(logData[1]), logData[2]));
-                        write(rooms[rooms.Count - 1].id.ToString());
+                        int id = getNextId();
+                        roomDict.TryAdd(id, new Room(id, bool.Parse(logData[1]), logData[2]));
+                        CommProtocol.write(stream, id.ToString());
                     }
                     else if (logData[0] == "jrm")
                     {
@@ -148,37 +157,6 @@ namespace MemoryServer2
         private string[] checkMessage(string sData)
         {
             return sData.Split(' ');
-        }
-        public string read()
-        {
-            byte[] buffer = new byte[1024];
-            try
-            {
-                int message_size = stream.Read(buffer, 0, 1024);
-            }
-            catch (Exception e)
-            {
-                Console.Write(e);
-            }
-            string s = System.Text.Encoding.UTF8.GetString(buffer);
-            stream.Flush();
-            s = s.Replace("\0", "");
-            return s;
-        }
-
-        public void write(string toWrite)
-        {
-            byte[] buffer = ASCIIEncoding.UTF8.GetBytes(toWrite);
-            try
-            {
-                stream.Write(buffer, 0, buffer.Length);
-                stream.Flush();
-            }
-            catch (Exception e)
-            {
-
-            }
-
-        }
+        }        
     }
 }
