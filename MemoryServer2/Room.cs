@@ -180,7 +180,7 @@ namespace MemoryServer2
 
                 if (sData == "noop")
                 {
-                    Thread.Sleep(50);
+                    //
                 }
                 else if (logData[0] == "lrm")
                 {
