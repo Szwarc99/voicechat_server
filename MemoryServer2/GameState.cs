@@ -55,7 +55,7 @@ namespace MemoryServer2
         {
             int i = 0;
             begun = Convert.ToBoolean(data[i++]);
-            playerOrder = new List<string>(Convert.ToInt32(data[i++]));
+            playerOrder = new string[Convert.ToInt32(data[i++])].ToList();
             players.Clear();
             for (int j = 0; j < playerOrder.Count; j++)
             {
@@ -66,7 +66,7 @@ namespace MemoryServer2
                 ps.score = Convert.ToInt32(data[i++]);
                 players.Add(playerOrder[j], ps);
             }
-            board = new List<int>(Convert.ToInt32(data[i++]));
+            board = new int[Convert.ToInt32(data[i++])].ToList();
             for (int j = 0; j < board.Count; j++)
             {
                 board[j] = Convert.ToInt32(data[i++]);
