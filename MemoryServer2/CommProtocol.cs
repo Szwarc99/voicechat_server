@@ -22,7 +22,12 @@ namespace MemoryServer2
         {
             using (StreamWriter sw = new StreamWriter(stream, Encoding.UTF8, 1024, true))
             {
-                sw.WriteLine(msg);
+                try
+                {
+                    sw.WriteLine(msg);
+                }
+                catch (Exception e)
+                { }
             }
         }
         public static string[] CheckMessage(string sData)

@@ -150,7 +150,7 @@ namespace MemoryServer2
                         else
                         {
                             string error = "error 2";
-                    CommProtocol.Write(stream, error);
+                            CommProtocol.Write(stream, error);
                             return;
                         }
                     }
@@ -173,17 +173,25 @@ namespace MemoryServer2
                 {
                     stateCode = state.Encode();
                 }
-
-                //TODO if disconnected catch exception
+                
                 CommProtocol.Write(stream, "game" + stateCode);
-                string sData = CommProtocol.Read(stream);
-
+                string sData="";
+                try
+                { 
+                    sData = CommProtocol.Read(stream);
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e);
+                    Console.WriteLine("Disconnecting the player " + playerID);
+                    sData = "lrm";
+                }
                 Console.WriteLine(sData);
                 string[] logData = CommProtocol.CheckMessage(sData);
 
                 if (sData == "noop")
                 {
-                    //
+                    
                 }
                 else if (logData[0] == "lrm")
                 {

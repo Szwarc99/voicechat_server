@@ -45,8 +45,17 @@ namespace MemoryServer2
                 // client found.
                 // create a thread to handle communication
 
-                Thread t = new Thread(unused => HandleClient(newClient)
-  );
+                Thread t = new Thread(unused =>
+                {
+                    try
+                    {
+                        HandleClient(newClient);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine("Client has disconnected due to error");
+                    }
+                });
                 t.Start();
             }
         }
@@ -64,7 +73,7 @@ namespace MemoryServer2
             bool clientConnected = true;
             DatabaseConnector dc = new DatabaseConnector();
             bool logged = false;
-            string playerID;
+            string playerID = "";
 
 
             while (clientConnected)
@@ -103,7 +112,18 @@ namespace MemoryServer2
 
                 while (logged)
                 {
-                    string sData = CommProtocol.Read(stream);
+                    string sData = "";
+                    try
+                    {
+                        sData = CommProtocol.Read(stream);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        Console.WriteLine("Logging out player " + playerID +" due to error");
+                        //TODO logout
+                        sData = "logout";
+                    }
                     Console.WriteLine(sData);
                     string[] logData = CommProtocol.CheckMessage(sData);
 
@@ -135,7 +155,12 @@ namespace MemoryServer2
                     }
                     else if (logData[0] == "jrm")
                     {
-                        rooms[int.Parse(logData[1])].HandleClient(client, logData[2], logData[3]);
+                        string pwd = "";
+                        if (logData.Length == 4)
+                        {
+                            pwd = logData[3];
+                        }
+                        rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd);
                     }
                 }
             }
