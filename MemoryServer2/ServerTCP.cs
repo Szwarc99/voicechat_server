@@ -10,10 +10,10 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace MemoryServer2
-{  
+{
     class ServerTCP
     {
-        private TcpListener _server;        
+        private TcpListener _server;
         private Boolean _isRunning;
 
         private ConcurrentDictionary<int, Room> roomDict = new ConcurrentDictionary<int, Room>();
@@ -25,20 +25,20 @@ namespace MemoryServer2
             _server.Start();
 
             _isRunning = true;
-            
+
             LoopClients();
         }
         private int getNextId()
         {
-            return Interlocked.Increment(ref nextRoomId)-1;
+            return Interlocked.Increment(ref nextRoomId) - 1;
         }
 
         public void LoopClients()
-        {            
+        {
             while (_isRunning)
             {
                 // wait for client connection
-               // object[] vs = new object[2];
+                // object[] vs = new object[2];
                 TcpClient newClient = _server.AcceptTcpClient();
                 //vs[0] = newClient;
                 //vs[1] = rooms;
@@ -61,32 +61,32 @@ namespace MemoryServer2
             // you could use the NetworkStream to read and write, 
             // but there is no forcing flush, even when requested
 
-            Boolean bClientConnected = true;
-            String sData = null;
+            bool clientConnected = true;
             DatabaseConnector dc = new DatabaseConnector();
             bool logged = false;
-            
+            string playerID;
 
-            while (bClientConnected)
+
+            while (clientConnected)
             {
                 do
                 {
-                    
-                    sData = CommProtocol.read(stream);
+                    string sData = CommProtocol.Read(stream);
                     Console.WriteLine(sData);
-                    string[] logData = checkMessage(sData);
+                    string[] logData = CommProtocol.CheckMessage(sData);
                     if (logData[0] == "log")
                     {
                         if (dc.checkUserData(logData[1], logData[2]))
                         {
 
                             Console.WriteLine("user logged");
-                            CommProtocol.write(stream, "1");
+                            CommProtocol.Write(stream, "1");
                             logged = true;
+                            playerID = logData[1];
                         }
                         else
                         {
-                            CommProtocol.write(stream, "!");
+                            CommProtocol.Write(stream, "!");
                             Console.WriteLine("wrong login data");
                         }
                     }
@@ -94,18 +94,18 @@ namespace MemoryServer2
                     {
                         if (dc.registerUser(logData[1], logData[2]))
                         {
-                            CommProtocol.write(stream, "1");
+                            CommProtocol.Write(stream, "1");
                         }
-                        else CommProtocol.write(stream, "!");
+                        else CommProtocol.Write(stream, "!");
                     }
                     else Console.WriteLine("wrong command");
                 } while (!logged);
 
                 while (logged)
                 {
-                    sData = CommProtocol.read(stream);
+                    string sData = CommProtocol.Read(stream);
                     Console.WriteLine(sData);
-                    string[] logData = checkMessage(sData);
+                    string[] logData = CommProtocol.CheckMessage(sData);
 
                     var rooms = this.roomDict.ToArray().Select(x => x.Value).ToList();
                     rooms.Sort((x, y) => x.id - y.id);
@@ -114,49 +114,31 @@ namespace MemoryServer2
                     {
                         Thread.Sleep(2000);
                         logged = false;
-                        bClientConnected = false;
+                        clientConnected = false;
                     }
                     else if (logData[0] == "ref")
-                    {                        
-                        if (rooms.Count != 0)
+                    {
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append(rooms.Count);
+                        foreach (Room room in rooms)
                         {
-                            StringBuilder sb = new StringBuilder();
-                            sb.Append(rooms.Count);
-                            foreach (Room room in rooms)
-                            {
-
-                                string msg =" "+room.id + " " + room.isPrivate + " " + room.activeUsers + " " + room.begun + " /";
-
-                                sb.Append(msg);                               
-                            }                            
-                            CommProtocol.write(stream, sb.ToString());
-                            Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint).Port.ToString()+ " " + sb);
-
-
+                            sb.Append(room.Encode());
                         }
-                        else CommProtocol.write(stream, "~");
+                        CommProtocol.Write(stream, sb.ToString());
+                        Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint).Port.ToString() + " " + sb);
                     }
                     else if (logData[0] == "crm")
                     {
                         int id = getNextId();
                         roomDict.TryAdd(id, new Room(id, bool.Parse(logData[1]), logData[2]));
-                        CommProtocol.write(stream, id.ToString());
+                        CommProtocol.Write(stream, id.ToString());
                     }
                     else if (logData[0] == "jrm")
                     {
-                        rooms[int.Parse(logData[1])].join(logData[2], logData[3]);
-                        write("ok");
-                    }
-                    else if (logData[0] == "lrm")
-                    {
-                        rooms[int.Parse(logData[1])].leave(logData[2]);
+                        rooms[int.Parse(logData[1])].HandleClient(client, logData[2], logData[3]);
                     }
                 }
             }
         }
-        private string[] checkMessage(string sData)
-        {
-            return sData.Split(' ');
-        }        
     }
 }

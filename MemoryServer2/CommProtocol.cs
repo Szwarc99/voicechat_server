@@ -10,7 +10,7 @@ namespace MemoryServer2
 {
     class CommProtocol
     {
-        public static string read(NetworkStream stream)
+        public static string Read(NetworkStream stream)
         {
             using (StreamReader sr = new StreamReader(stream, Encoding.UTF8, false, 1024, true))
             {
@@ -18,12 +18,16 @@ namespace MemoryServer2
             }
         }
 
-        public static void write(NetworkStream stream, string msg)
+        public static void Write(NetworkStream stream, string msg)
         {
             using (StreamWriter sw = new StreamWriter(stream, Encoding.UTF8, 1024, true))
             {
                 sw.WriteLine(msg);
             }
+        }
+        public static string[] CheckMessage(string sData)
+        {
+            return sData.Split(' ');
         }
     }
 }
