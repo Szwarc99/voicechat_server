@@ -154,7 +154,6 @@ namespace MemoryServer2
                         }
                     }
                 }
-                CommProtocol.Write(stream, "ok");
             }
             else
             {
