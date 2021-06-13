@@ -92,6 +92,7 @@ namespace MemoryServer2
                                 if (state.board[shown[0]] == state.board[shown[1]])
                                 {
                                     state.board[shown[0]] = state.board[shown[1]] = -2;
+                                    state.players[state.playerOrder[state.activePlayer]].score++;
                                 }
                                 else
                                 {
@@ -99,23 +100,27 @@ namespace MemoryServer2
                                 }
                             }
                         }
-                        else
+                    }
+                    else
+                    {
+                        if(!state.players[state.playerOrder[state.activePlayer]].connected)
                         {
-                            if (shown.Count == 2)
-                            {
-                                if (state.board[shown[0]] == state.board[shown[1]])
-                                {
-                                    nextPlayer = state.activePlayer;
-                                }
-                                else
-                                {
-                                    nextPlayer = (state.activePlayer + 1) % state.players.Count;
-                                }
-                                // start timer
-                                sw.Restart();
-                                state.activePlayer = -1;
-                            }
+                            nextPlayer = (state.activePlayer + 1) % state.players.Count;
                         }
+                        else if (shown.Count == 2)
+                        {
+                            if (state.board[shown[0]] == state.board[shown[1]])
+                            {
+                                nextPlayer = state.activePlayer;
+                            }
+                            else
+                            {
+                                nextPlayer = (state.activePlayer + 1) % state.players.Count;
+                            }
+                            // start timer
+                            sw.Restart();
+                            state.activePlayer = -1;
+                        }                        
                     }
                 }
             }
