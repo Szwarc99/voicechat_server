@@ -149,7 +149,8 @@ namespace MemoryServer2
                         }
                         else
                         {
-                            //TODO game has already begun exception
+                            string error = "error 2";
+                    CommProtocol.Write(stream, error);
                             return;
                         }
                     }
@@ -157,9 +158,11 @@ namespace MemoryServer2
             }
             else
             {
-                // TODO wrong password
+                string error = "error 1";
+                CommProtocol.Write(stream, error);
                 return;
             }
+            CommProtocol.Write(stream, "ok");
 
             bool inRoom = true;
 
