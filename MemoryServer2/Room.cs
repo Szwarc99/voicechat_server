@@ -172,7 +172,7 @@ namespace MemoryServer2
                 }
 
                 //TODO if disconnected catch exception
-                CommProtocol.Write(stream, "game " + stateCode);
+                CommProtocol.Write(stream, "game" + stateCode);
                 string sData = CommProtocol.Read(stream);
 
                 Console.WriteLine(sData);
