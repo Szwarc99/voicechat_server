@@ -34,21 +34,17 @@ namespace MemoryServer2
                 list[n] = value;
             }
         }
-        public void initBoard()
-        {
-            for (int i = 0; i < 8; i++)
-            {
-                boardValues.Add(i);
-                boardValues.Add(i);
-            }
-        }
+
         public Room(int id, bool isPrivate, string password)
         {
             this.isPrivate = isPrivate;
             this.password = password;
             this.id = id;
-            initBoard();
-            
+            for (int i = 0; i < 8; i++)
+            {
+                boardValues.Add(i);
+                boardValues.Add(i);
+            }
         }
         public string Password
         {
@@ -62,7 +58,6 @@ namespace MemoryServer2
             {
                 if (!state.begun)
                 {
-                    initBoard();
                     int readyCount = 0;
                     foreach (var player in state.players.Values)
                     {
@@ -70,7 +65,6 @@ namespace MemoryServer2
                     }
                     if (readyCount == state.players.Count && readyCount > 1)
                     {
-                        state.begun = true;
                         Shuffle(ref boardValues);
                         Shuffle(ref state.playerOrder);
                         state.activePlayer = 0;
@@ -78,6 +72,8 @@ namespace MemoryServer2
                         {                         
                             p.score = 0;
                         }
+                        state.initBoard();
+                        state.begun = true;
                     }
                 }
                 else
@@ -114,6 +110,7 @@ namespace MemoryServer2
                                     state.board[shown[0]] = state.board[shown[1]] = -1;
                                 }
                             }
+                            Console.WriteLine("r " + r);
                             if (r == 16)
                             {
                                 r = 0;

@@ -23,6 +23,11 @@ namespace MemoryServer2
 
         public GameState()
         {
+            initBoard();
+        }
+
+        public void initBoard()
+        {
             int[] vals = new int[16];
             for (int i = 0; i < vals.Length; i++)
             {
