@@ -34,17 +34,21 @@ namespace MemoryServer2
                 list[n] = value;
             }
         }
-
-        public Room(int id, bool isPrivate, string password)
+        public void initBoard()
         {
-            this.isPrivate = isPrivate;
-            this.password = password;
-            this.id = id;
             for (int i = 0; i < 8; i++)
             {
                 boardValues.Add(i);
                 boardValues.Add(i);
             }
+        }
+        public Room(int id, bool isPrivate, string password)
+        {
+            this.isPrivate = isPrivate;
+            this.password = password;
+            this.id = id;
+            initBoard();
+            
         }
         public string Password
         {
@@ -58,6 +62,7 @@ namespace MemoryServer2
             {
                 if (!state.begun)
                 {
+                    initBoard();
                     int readyCount = 0;
                     foreach (var player in state.players.Values)
                     {
