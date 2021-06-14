@@ -10,6 +10,8 @@ namespace MemoryServer2
 {
     class CommProtocol
     {
+        public Dictionary<NetworkStream, string> clientKeys = new Dictionary<NetworkStream,string>();
+
         public static string Read(NetworkStream stream)
         {
             using (StreamReader sr = new StreamReader(stream, Encoding.UTF8, false, 1024, true))

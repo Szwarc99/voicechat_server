@@ -69,6 +69,10 @@ namespace MemoryServer2
                         Shuffle(ref boardValues);
                         Shuffle(ref state.playerOrder);
                         state.activePlayer = 0;
+                        foreach (var p in state.players.Values)
+                        {                         
+                            p.score = 0;
+                        }
                     }
                 }
                 else
@@ -84,7 +88,7 @@ namespace MemoryServer2
 
                     if (state.activePlayer == -1)
                     {
-                        if (sw.ElapsedMilliseconds >= 3000)
+                        if (sw.ElapsedMilliseconds >= 2000)
                         {
                             state.activePlayer = nextPlayer;
                             if (shown.Count == 2)
@@ -93,6 +97,27 @@ namespace MemoryServer2
                                 {
                                     state.board[shown[0]] = state.board[shown[1]] = -2;
                                     state.players[state.playerOrder[state.activePlayer]].score++;
+                                    int r = 0;
+                                    for (int i = 0; i < 16; i++)
+                                    {
+                                        if (state.board[i] == -2)
+                                            r++;
+                                    }
+                                    if(r == 15)
+                                    {
+                                        int max = 0;
+                                        foreach(var p in state.players.Values)
+                                        {
+                                            max = Math.Max(max, p.score);
+                                            p.ready = false;
+                                        }
+                                        state.winners.Clear();
+                                        foreach (var p in state.players)
+                                        {
+                                            if (p.Value.score == max) state.winners.Add(p.Key);
+                                        }
+                                        state.begun = false;
+                                    }
                                 }
                                 else
                                 {
@@ -103,7 +128,7 @@ namespace MemoryServer2
                     }
                     else
                     {
-                        if(!state.players[state.playerOrder[state.activePlayer]].connected)
+                        if (!state.players[state.playerOrder[state.activePlayer]].connected)
                         {
                             nextPlayer = (state.activePlayer + 1) % state.players.Count;
                         }
@@ -120,7 +145,7 @@ namespace MemoryServer2
                             // start timer
                             sw.Restart();
                             state.activePlayer = -1;
-                        }                        
+                        }
                     }
                 }
             }
@@ -173,25 +198,25 @@ namespace MemoryServer2
                 {
                     stateCode = state.Encode();
                 }
-                
+
                 CommProtocol.Write(stream, "game" + stateCode);
-                string sData="";
+                string sData = "";
                 try
-                { 
+                {
                     sData = CommProtocol.Read(stream);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine(e);
                     Console.WriteLine("Disconnecting the player " + playerID);
                     sData = "lrm";
                 }
-                Console.WriteLine(sData);
+                if (sData != "noop") { Console.WriteLine(sData); }
                 string[] logData = CommProtocol.CheckMessage(sData);
 
                 if (sData == "noop")
                 {
-                    
+
                 }
                 else if (logData[0] == "lrm")
                 {

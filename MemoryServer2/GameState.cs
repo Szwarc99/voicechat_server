@@ -14,9 +14,10 @@ namespace MemoryServer2
     }
     class GameState
     {
-        public bool begun = false;
+        public bool begun = false;        
         public List<string> playerOrder = new List<string>();
         public Dictionary<string, PlayerState> players = new Dictionary<string, PlayerState>();
+        public List<string> winners = new List<string>();
         public List<int> board;
         public int activePlayer = -1;
 
@@ -47,6 +48,11 @@ namespace MemoryServer2
                 sb.Append(" " + val);
             }
             sb.Append(" " + activePlayer);
+            sb.Append(" " + winners.Count);
+            foreach(var w in winners)
+            {
+                sb.Append(w);
+            }
 
             return sb.ToString();
         }
@@ -72,6 +78,11 @@ namespace MemoryServer2
                 board[j] = Convert.ToInt32(data[i++]);
             }
             activePlayer = Convert.ToInt32(data[i++]);
+            winners = new string[Convert.ToInt32(data[i++])].ToList();
+            for (int j = 0; j < winners.Count; j++)
+            {
+                winners[j] = data[i];
+            }
         }
     }
 }

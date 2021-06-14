@@ -5,16 +5,29 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace MemoryServer2
 {
+    class UserInfo
+    { 
+
+    }
     class ServerTCP
     {
         private TcpListener _server;
         private Boolean _isRunning;
+
+        private RSACryptoServiceProvider rsa;
+        private string privKey;
+
+
+
+
+        private List<string> loggedUsers = new List<string>();       
 
         private ConcurrentDictionary<int, Room> roomDict = new ConcurrentDictionary<int, Room>();
         private int nextRoomId = 0;
@@ -23,9 +36,9 @@ namespace MemoryServer2
         {
             _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
             _server.Start();
-
+            privKey = "MIICXAIBAAKBgF82iEMWuHk0JaFUGVUQ7DqXbzg2VAo/U9u4xtD8Z7rOQbXjBsROlBvOMUaa0ztdTPhTByfIv4PBjN0pis6p/Bpdwlyz4RyvRDARhnaFGEJ1VTrrc0G+buRGYKin1nd/1KPvDwhgARD+NM3Mta//M4FcXgnNJ2WVEsY7Vh92BvTTAgMBAAECgYBUzVox/tORSEvX0/K4HFl6mhQ6SdEyS1MiWQHjc1vkOv61xJ3rTF2IIm8rBozqy9/ZMQInghppfIM9HFoAVdAuiV7kvDv9lvyswiWaOe+fA7MQ73yP5O8ofzy41XkoSFqDjdZB0Tzml/CKmB/f737WoaBFzyxkp9U141eL6MOAYQJBAKFdaCZe4211X5ZBZojE1m8bSaVHYD/fgLVUe3K74h6x6vGjSeFmuvFP0HM44X65gBiN6EfrrLYijWFdSWP6AxECQQCXDWJ/kU+2Tzrd//1jQ6Rti5SKI7Dk0Vpa1IDyqPD5LmyWu+dfMYWnZQ0HsQFlkRGpQE62qgCYIHZI0vW5tPGjAkEAlpITWiKWsw+f9xPlul95/EkJKll03YUPk6RWYNQihiPcqEeG6/WxIPUp/Coqd9ZeSgs4oMuv6HBLXnvuvISREQJBAIm/rgRxioTR6fgLe5KrW+Z+NH5pH+b7N+++/LzN7br/aA1p3AyGh8DouSI7e++YhMeZGm8fxxzz9Yphv66T4QsCQEqZcP8myZTYxibeFa47q/3PjQD4EbTT/8XLZEl+AEKl7xJz1TSbotUxwZ146rj7R2H0ew7PVlRd0y092e/VMVE=";
             _isRunning = true;
-
+            rsa = new RSACryptoServiceProvider(1024);            
             LoopClients();
         }
         private int getNextId()
@@ -85,19 +98,27 @@ namespace MemoryServer2
                     string[] logData = CommProtocol.CheckMessage(sData);
                     if (logData[0] == "log")
                     {
-                        if (dc.checkUserData(logData[1], logData[2]))
+                        if (!loggedUsers.Contains(logData[1]))
                         {
+                            if (dc.checkUserData(logData[1], logData[2]))
+                            {
 
-                            Console.WriteLine("user logged");
-                            CommProtocol.Write(stream, "1");
-                            logged = true;
-                            playerID = logData[1];
+                                Console.WriteLine("user logged");
+                                CommProtocol.Write(stream, "1");
+                                logged = true;
+                                playerID = logData[1];
+                                lock(loggedUsers)
+                                {
+                                    loggedUsers.Add(playerID);
+                                }
+                            }
+                            else
+                            {
+                                CommProtocol.Write(stream, "!");
+                                Console.WriteLine("wrong login data");
+                            }
                         }
-                        else
-                        {
-                            CommProtocol.Write(stream, "!");
-                            Console.WriteLine("wrong login data");
-                        }
+                        else CommProtocol.Write(stream,"error already_logged_in");
                     }
                     else if (logData[0] == "reg")
                     {
@@ -131,10 +152,13 @@ namespace MemoryServer2
                     rooms.Sort((x, y) => x.id - y.id);
 
                     if (sData == "logout")
-                    {
-                        Thread.Sleep(2000);
+                    {                        
                         logged = false;
                         clientConnected = false;
+                        lock(loggedUsers)
+                        { 
+                            loggedUsers.Remove(playerID);
+                        }
                     }
                     else if (logData[0] == "ref")
                     {
