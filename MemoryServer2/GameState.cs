@@ -51,7 +51,7 @@ namespace MemoryServer2
             sb.Append(" " + winners.Count);
             foreach(var w in winners)
             {
-                sb.Append(w);
+                sb.Append(" " + w);
             }
 
             return sb.ToString();
@@ -79,6 +79,7 @@ namespace MemoryServer2
             }
             activePlayer = Convert.ToInt32(data[i++]);
             winners = new string[Convert.ToInt32(data[i++])].ToList();
+            winners.Clear();
             for (int j = 0; j < winners.Count; j++)
             {
                 winners[j] = data[i];
