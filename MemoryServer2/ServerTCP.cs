@@ -22,7 +22,7 @@ namespace MemoryServer2
         private Boolean _isRunning;
 
         private RSACryptoServiceProvider rsa;
-        private string privKey;
+        RSAParameters RSAKeyInfo;
 
 
 
@@ -35,10 +35,19 @@ namespace MemoryServer2
         public ServerTCP(int port)
         {
             _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
-            _server.Start();
-            privKey = "MIICXAIBAAKBgF82iEMWuHk0JaFUGVUQ7DqXbzg2VAo/U9u4xtD8Z7rOQbXjBsROlBvOMUaa0ztdTPhTByfIv4PBjN0pis6p/Bpdwlyz4RyvRDARhnaFGEJ1VTrrc0G+buRGYKin1nd/1KPvDwhgARD+NM3Mta//M4FcXgnNJ2WVEsY7Vh92BvTTAgMBAAECgYBUzVox/tORSEvX0/K4HFl6mhQ6SdEyS1MiWQHjc1vkOv61xJ3rTF2IIm8rBozqy9/ZMQInghppfIM9HFoAVdAuiV7kvDv9lvyswiWaOe+fA7MQ73yP5O8ofzy41XkoSFqDjdZB0Tzml/CKmB/f737WoaBFzyxkp9U141eL6MOAYQJBAKFdaCZe4211X5ZBZojE1m8bSaVHYD/fgLVUe3K74h6x6vGjSeFmuvFP0HM44X65gBiN6EfrrLYijWFdSWP6AxECQQCXDWJ/kU+2Tzrd//1jQ6Rti5SKI7Dk0Vpa1IDyqPD5LmyWu+dfMYWnZQ0HsQFlkRGpQE62qgCYIHZI0vW5tPGjAkEAlpITWiKWsw+f9xPlul95/EkJKll03YUPk6RWYNQihiPcqEeG6/WxIPUp/Coqd9ZeSgs4oMuv6HBLXnvuvISREQJBAIm/rgRxioTR6fgLe5KrW+Z+NH5pH+b7N+++/LzN7br/aA1p3AyGh8DouSI7e++YhMeZGm8fxxzz9Yphv66T4QsCQEqZcP8myZTYxibeFa47q/3PjQD4EbTT/8XLZEl+AEKl7xJz1TSbotUxwZ146rj7R2H0ew7PVlRd0y092e/VMVE=";
+            _server.Start();            
             _isRunning = true;
-            rsa = new RSACryptoServiceProvider(1024);            
+            rsa = rsa = new RSACryptoServiceProvider(1024);
+            var privKString = "<?xml version=\"1.0\" encoding=\"utf-16\"?>\r\n<RSAParameters xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n  <Exponent>AQAB</Exponent>\r\n  <Modulus>4HAXJZl0crjN0xZ+UFqe+N/ptG3K2cSrCvKXokL08heM+fwyvw53OemwCtsmFD6yn6YOYwrvRQ/ekQztM/t6/9pK0KxenDQDDB59oLxXYGZ437kzTIvC2kHehrLsdpwuW54wp0KnF4K03ABYe5oJyg3JsLust/OJLadi70WF4mE=</Modulus>\r\n  <P>5df0Ppx+0TLrDhIawuHJIdDIYk2GfvwHaSYILM5uubVG4OhECm0VBf4yC36mMnToxqtvmJH3wX9zs7hVN8ZESw==</P>\r\n  <Q>+fqmuQ4Y5qL235BMr24GL+fEdKbL4vxv/M45+iAOJC9JKi/fKwAB+h9KJSMfoR9JP1GmjPhhMFln+FCGpjzQgw==</Q>\r\n  <DP>o9q1m+EzI256VfigLWiLW9kc0b/U7zg7DEH5t/+evjO2iOXsg8ZKI5CZGsq6LuRbgi57izgceUykLm5uCioFSw==</DP>\r\n  <DQ>BX4ca7SDl429Huxswu4H9MWC640+rZ4eV8+wNm694M2pLeQfYzJ82KIXXvmGmGO3mEyS/EX43LcaMbqTOtPbQQ==</DQ>\r\n  <InverseQ>mGuyHBrz9+ySbKTLlWscA2IuHyDBBaRp7zq4bEwjioEfUhJy1NqE2DTDyzGmXzfBg7KGj0U/hhIAg6sEYZJ1FQ==</InverseQ>\r\n  <D>YMaUhIb12l3rimDBmJ5qu/+5Ay7wcBRIeJEAZ1wdyKH1DPn9W7q+GD+2xAeZFNOwK/zraTOW1p2wJ7V+NpLyhr9QxD+l++UbiHzGmp5cQufCwjqCU1ZfyV7wVhxTKDQwF9LWmGInp36oDQ1AyILJxANg6ytfqL3OrJsITSOuGD0=</D>\r\n</RSAParameters>";
+
+            var sr = new System.IO.StringReader(privKString);
+            //we need a deserializer
+            var xs = new System.Xml.Serialization.XmlSerializer(typeof(RSAParameters));
+            //get the object back from the stream
+            var privKey = (RSAParameters)xs.Deserialize(sr);
+            rsa.ImportParameters(privKey);
+
+
             LoopClients();
         }
         private int getNextId()
