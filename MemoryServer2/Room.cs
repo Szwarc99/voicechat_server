@@ -91,38 +91,39 @@ namespace MemoryServer2
                         if (sw.ElapsedMilliseconds >= 2000)
                         {
                             state.activePlayer = nextPlayer;
+                            int r = 0;
                             if (shown.Count == 2)
                             {
                                 if (state.board[shown[0]] == state.board[shown[1]])
                                 {
                                     state.board[shown[0]] = state.board[shown[1]] = -2;
-                                    state.players[state.playerOrder[state.activePlayer]].score++;
-                                    int r = 0;
+                                    state.players[state.playerOrder[state.activePlayer]].score++;                                    
                                     for (int i = 0; i < 16; i++)
                                     {
                                         if (state.board[i] == -2)
                                             r++;
-                                    }
-                                    if(r == 15)
-                                    {
-                                        int max = 0;
-                                        foreach(var p in state.players.Values)
-                                        {
-                                            max = Math.Max(max, p.score);
-                                            p.ready = false;
-                                        }
-                                        state.winners.Clear();
-                                        foreach (var p in state.players)
-                                        {
-                                            if (p.Value.score == max) state.winners.Add(p.Key);
-                                        }
-                                        state.begun = false;
-                                    }
+                                    }                                    
                                 }
                                 else
                                 {
                                     state.board[shown[0]] = state.board[shown[1]] = -1;
                                 }
+                            }
+                            if (r == 16)
+                            {
+                                r = 0;
+                                int max = 0;
+                                foreach (var p in state.players.Values)
+                                {
+                                    max = Math.Max(max, p.score);
+                                    p.ready = false;
+                                }
+                                state.winners.Clear();
+                                foreach (var p in state.players)
+                                {
+                                    if (p.Value.score == max) state.winners.Add(p.Key);
+                                }
+                                state.begun = false;
                             }
                         }
                     }
