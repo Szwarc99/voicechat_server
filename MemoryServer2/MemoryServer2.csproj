@@ -84,6 +84,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="keys\priv.txt" />
+    <Content Include="keys\pub.txt" />
     <Content Include="MemoryDatabase.mdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
