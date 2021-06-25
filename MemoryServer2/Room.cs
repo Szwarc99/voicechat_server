@@ -177,7 +177,7 @@ namespace MemoryServer2
                         }
                         else
                         {
-                            string error = "error 2";
+                            string error = "error full";
                             CommProtocol.Write(stream, error);
                             return;
                         }
@@ -186,7 +186,7 @@ namespace MemoryServer2
             }
             else
             {
-                string error = "error 1";
+                string error = "error wrong_password";
                 CommProtocol.Write(stream, error);
                 return;
             }
