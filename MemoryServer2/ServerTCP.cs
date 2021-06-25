@@ -111,7 +111,7 @@ namespace MemoryServer2
                             {
 
                                 Console.WriteLine("user logged");
-                                CommProtocol.Write(stream, "1");
+                                CommProtocol.Write(stream, "log ok");
                                 logged = true;
                                 playerID = logData[1];
                                 lock(loggedUsers)
@@ -121,7 +121,7 @@ namespace MemoryServer2
                             }
                             else
                             {
-                                CommProtocol.Write(stream, "!");
+                                CommProtocol.Write(stream, "error wrong_credentials");
                                 Console.WriteLine("wrong login data");
                             }
                         }
@@ -131,9 +131,9 @@ namespace MemoryServer2
                     {
                         if (dc.registerUser(logData[1], Hash(logData[1]+logData[2])))
                         {
-                            CommProtocol.Write(stream, "1");
+                            CommProtocol.Write(stream, "reg ok");
                         }
-                        else CommProtocol.Write(stream, "!");
+                        else CommProtocol.Write(stream, "error login_already_used");
                     }
                     else Console.WriteLine("wrong command");
                 } while (!logged);
