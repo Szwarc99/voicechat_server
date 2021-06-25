@@ -197,6 +197,11 @@ namespace MemoryServer2
                         }
                         rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd);
                     }
+                    else if (logData[0] == "chngpass")
+                    {
+                        dc.editUserPassword(logData[1], logData[2]);
+                        CommProtocol.Write(stream, "OK");
+                    }
                 }
             }
         }
