@@ -11,11 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace MemoryServer2
-{
-    class UserInfo
-    { 
-
-    }
+{    
     class ServerTCP
     {
         private TcpListener _server;
