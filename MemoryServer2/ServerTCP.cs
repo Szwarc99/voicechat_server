@@ -175,8 +175,7 @@ namespace MemoryServer2
                         {
                             sb.Append(room.Encode());
                         }
-                        CommProtocol.Write(stream, sb.ToString());
-                        Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint).Port.ToString() + " " + sb);
+                        CommProtocol.Write(stream, sb.ToString());                        
                     }
                     else if (logData[0] == "crm")
                     {
@@ -196,7 +195,7 @@ namespace MemoryServer2
                     else if (logData[0] == "chngpass")
                     {
                         dc.editUserPassword(logData[1], logData[2]);
-                        CommProtocol.Write(stream, "OK");
+                        CommProtocol.Write(stream, "ok");
                     }
                 }
             }
