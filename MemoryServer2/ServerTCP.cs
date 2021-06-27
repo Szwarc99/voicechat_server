@@ -194,7 +194,7 @@ namespace MemoryServer2
                     }
                     else if (logData[0] == "chngpass")
                     {
-                        dc.editUserPassword(logData[1], logData[2]);
+                        dc.editUserPassword(logData[1], Hash(logData[1] + logData[2]));
                         CommProtocol.Write(stream, "ok");
                     }
                 }

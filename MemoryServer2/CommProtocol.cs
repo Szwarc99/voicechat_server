@@ -28,17 +28,17 @@ namespace MemoryServer2
 
         public static void setAes(NetworkStream stream)
         {
-            byte[] privateKey = File.ReadAllBytes("C:\\Users\\wojci\\source\\repos\\MemoryServer2\\MemoryServer2\\keys\\priv.txt");
+            byte[] privateKey = File.ReadAllBytes("C:\\Users\\Piotrek\\source\\repos\\MemoryServer3\\MemoryServer2\\keys\\priv.txt");
             rsa.ImportCspBlob(privateKey);
 
             using (StreamReader sr = new StreamReader(stream, Encoding.UTF8, false, 1024, true))
             {
                 string msg = sr.ReadLine();
-                Console.WriteLine(msg);
+                
                 byte[] key = rsa.Decrypt(Convert.FromBase64String(msg), false);
 
                 msg = sr.ReadLine();
-                Console.WriteLine(msg);
+                Console.WriteLine("new client connected, new key accepted");
                 byte[] iv = rsa.Decrypt(Convert.FromBase64String(msg), false);
 
                 aesParams ap = new aesParams(key, iv);
