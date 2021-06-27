@@ -147,9 +147,7 @@ namespace MemoryServer2
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(e);
-                        Console.WriteLine("Logging out player " + playerID +" due to error");
-                        //TODO logout
+                        Console.WriteLine("Logging out player " + playerID +" due to error");                        
                         sData = "logout";
                     }
                     Console.WriteLine(sData);
