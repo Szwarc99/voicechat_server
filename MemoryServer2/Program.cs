@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace MemoryServer2
 {
@@ -11,9 +15,11 @@ namespace MemoryServer2
     {
         static void Main(string[] args)
         {
+            
             try
             {
                 ServerTCP server = new ServerTCP(8080);
+                server.LoopClients();
             }
             catch (Exception ex)
             {

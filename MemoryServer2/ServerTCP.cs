@@ -11,13 +11,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace MemoryServer2
-{    
+{
     class ServerTCP
     {
         private TcpListener _server;
         private Boolean _isRunning;
 
-        private List<string> loggedUsers = new List<string>();       
+        private List<string> loggedUsers = new List<string>();
 
         private ConcurrentDictionary<int, Room> roomDict = new ConcurrentDictionary<int, Room>();
         private int nextRoomId = 0;
@@ -25,10 +25,8 @@ namespace MemoryServer2
         public ServerTCP(int port)
         {
             _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
-            _server.Start();            
+            _server.Start();
             _isRunning = true;
-
-            LoopClients();
         }
         private int getNextId()
         {
@@ -41,7 +39,7 @@ namespace MemoryServer2
             {
                 // wait for client connection
                 // object[] vs = new object[2];
-                TcpClient newClient = _server.AcceptTcpClient();                
+                TcpClient newClient = _server.AcceptTcpClient();
                 //vs[0] = newClient;
                 //vs[1] = rooms;
                 // client found.
@@ -55,7 +53,9 @@ namespace MemoryServer2
                     }
                     catch (Exception e)
                     {
+                        Console.WriteLine(e);
                         Console.WriteLine("Client has disconnected due to error");
+                        newClient.Close();
                     }
                 });
                 t.Start();
@@ -91,111 +91,77 @@ namespace MemoryServer2
             // but there is no forcing flush, even when requested
 
             bool clientConnected = true;
-            DatabaseConnector dc = new DatabaseConnector();
+            /*DatabaseConnector dc = new DatabaseConnector();
             bool logged = false;
-            string playerID = "";
+            string playerID = "";*/
 
+            CommProtocol.Write(stream, "test");
 
             while (clientConnected)
             {
-                do
+                Console.WriteLine("loop");
+                string userID;
+                string sData = "";
+
+                try
                 {
-                    string sData = CommProtocol.Read(stream);
+                    sData = CommProtocol.Read(stream);
                     Console.WriteLine(sData);
-                    string[] logData = CommProtocol.CheckMessage(sData);
-                    if (logData[0] == "log")
-                    {
-                        if (!loggedUsers.Contains(logData[1]))
-                        {
-                            if (dc.checkUserData(logData[1], Hash(logData[1]+logData[2])))
-                            {
-
-                                Console.WriteLine("user logged");
-                                CommProtocol.Write(stream, "log ok");
-                                logged = true;
-                                playerID = logData[1];
-                                lock(loggedUsers)
-                                {
-                                    loggedUsers.Add(playerID);
-                                }
-                            }
-                            else
-                            {
-                                CommProtocol.Write(stream, "error wrong_credentials");
-                                Console.WriteLine("wrong login data");
-                            }
-                        }
-                        else CommProtocol.Write(stream,"error already_logged_in");
-                    }
-                    else if (logData[0] == "reg")
-                    {
-                        if (dc.registerUser(logData[1], Hash(logData[1]+logData[2])))
-                        {
-                            CommProtocol.Write(stream, "reg ok");
-                        }
-                        else CommProtocol.Write(stream, "error login_already_used");
-                    }
-                    else Console.WriteLine("wrong command");
-                } while (!logged);
-
-                while (logged)
-                {
-                    string sData = "";
-                    try
-                    {
-                        sData = CommProtocol.Read(stream);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Logging out player " + playerID +" due to error");                        
-                        sData = "logout";
-                    }
-                    Console.WriteLine(sData);
-                    string[] logData = CommProtocol.CheckMessage(sData);
-
-                    var rooms = this.roomDict.ToArray().Select(x => x.Value).ToList();
-                    rooms.Sort((x, y) => x.id - y.id);
-
-                    if (sData == "logout")
-                    {                        
-                        logged = false;
-                        clientConnected = false;
-                        lock(loggedUsers)
-                        { 
-                            loggedUsers.Remove(playerID);
-                        }
-                    }
-                    else if (logData[0] == "ref")
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        sb.Append(rooms.Count);
-                        foreach (Room room in rooms)
-                        {
-                            sb.Append(room.Encode());
-                        }
-                        CommProtocol.Write(stream, sb.ToString());                        
-                    }
-                    else if (logData[0] == "crm")
-                    {
-                        int id = getNextId();
-                        roomDict.TryAdd(id, new Room(id, bool.Parse(logData[1]), logData[2]));
-                        CommProtocol.Write(stream, id.ToString());
-                    }
-                    else if (logData[0] == "jrm")
-                    {
-                        string pwd = "";
-                        if (logData.Length == 4)
-                        {
-                            pwd = logData[3];
-                        }
-                        rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd);
-                    }
-                    else if (logData[0] == "chngpass")
-                    {
-                        dc.editUserPassword(logData[1], Hash(logData[1] + logData[2]));
-                        CommProtocol.Write(stream, "ok");
-                    }
                 }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    sData = "logout";
+                }
+                string[] logData = CommProtocol.CheckMessage(sData);
+
+                var rooms = this.roomDict.ToArray().Select(x => x.Value).ToList();
+                rooms.Sort((x, y) => x.id - y.id);
+
+                if (sData == "logout")
+                {
+                    clientConnected = false;
+                }
+                if (logData[0] == "user")
+                {
+                    userID = logData[1];
+                    lock (loggedUsers)
+                    {
+                        loggedUsers.Add(userID);
+                    }
+                    CommProtocol.Write(stream, "ok");
+                }
+                if (logData[0] == "ref")
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append(rooms.Count);
+                    foreach (Room room in rooms)
+                    {
+                        sb.Append(room.Encode());
+                    }
+                    CommProtocol.Write(stream, sb.ToString());
+                }
+                else if (logData[0] == "crm")
+                {
+                    int id = getNextId();
+                    roomDict.TryAdd(id, new Room(id, bool.Parse(logData[1]), logData[2]));
+                    CommProtocol.Write(stream, id.ToString());
+                }
+                else if (logData[0] == "jrm")
+                {
+                    string pwd = "";
+                    if (logData.Length == 4)
+                    {
+                        pwd = logData[3];
+                    }
+                    rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd);
+                }
+                /*else if (logData[0] == "chngpass")
+                {
+                    dc.editUserPassword(logData[1], Hash(logData[1] + logData[2]));
+                    CommProtocol.Write(stream, "ok");
+                }
+                */
             }
         }
     }
