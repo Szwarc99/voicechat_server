@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 
-namespace MemoryServer2
+namespace VoiceChatServer
 {
     class Program
     {
