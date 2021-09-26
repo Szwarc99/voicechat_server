@@ -110,7 +110,7 @@ namespace MemoryServer2
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    //Console.WriteLine(e);
                     sData = "logout";
                 }
                 string[] logData = CommProtocol.CheckMessage(sData);
@@ -150,11 +150,16 @@ namespace MemoryServer2
                 else if (logData[0] == "jrm")
                 {
                     string pwd = "";
-                    if (logData.Length == 4)
+                    int port;
+                    if (logData.Length == 5)
                     {
                         pwd = logData[3];
+                        port = Int32.Parse(logData[4]);
                     }
-                    rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd);
+                    else
+                        port = Int32.Parse(logData[3]);
+                    Console.WriteLine(port);
+                    rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd, port);
                 }
                 /*else if (logData[0] == "chngpass")
                 {

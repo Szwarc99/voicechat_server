@@ -1,15 +1,41 @@
-﻿using System;
+﻿using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace MemoryServer2
 {
+    class Client
+    {
+        public int offset;
+        public double avgTimeAhead;
+        public double missedFactor;
+        public Dictionary<int, byte[]> buffer = new Dictionary<int, byte[]>();
+    }
+
+    public static class WinApi
+    {
+        /// <summary>TimeBeginPeriod(). See the Windows API documentation for details.</summary>
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Interoperability", "CA1401:PInvokesShouldNotBeVisible"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2118:ReviewSuppressUnmanagedCodeSecurityUsage"), SuppressUnmanagedCodeSecurity]
+        [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod", SetLastError = true)]
+
+        public static extern uint TimeBeginPeriod(uint uMilliseconds);
+
+        /// <summary>TimeEndPeriod(). See the Windows API documentation for details.</summary>
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Interoperability", "CA1401:PInvokesShouldNotBeVisible"), System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Security", "CA2118:ReviewSuppressUnmanagedCodeSecurityUsage"), SuppressUnmanagedCodeSecurity]
+        [DllImport("winmm.dll", EntryPoint = "timeEndPeriod", SetLastError = true)]
+
+        public static extern uint TimeEndPeriod(uint uMilliseconds);
+    }
 
     class Room
     {
@@ -17,30 +43,35 @@ namespace MemoryServer2
         private string password;
         public bool isPrivate;
         Thread listenerThread;
-        public Dictionary<IPEndPoint, List<byte[]>> users = new Dictionary<IPEndPoint, List<byte[]>>();
+        Thread mixerThread;
+        int current = 0;
+        Stopwatch stopwatch = new Stopwatch();
 
-        UdpClient udpServer = new UdpClient(8100);
+        public Dictionary<SocketAddress, Client> users = new Dictionary<SocketAddress, Client>();
+
+        UdpClient udpServer;
         public Room(int id, bool isPrivate, string password)
         {
             this.isPrivate = isPrivate;
             this.password = password;
             this.id = id;
+            udpServer = new UdpClient(8100 + id);
             listenerThread = new Thread(unused =>
             {
                 ReceiveUDP();
             });
             listenerThread.Start();
+
+            mixerThread = new Thread(unused =>
+            {
+                SendAudioBack();
+            });
+            mixerThread.Start();
         }
         public string Password
         {
             get { return password; }
             set { password = ""; }
-        }
-
-        void StartNewListener()
-        {
-            Console.WriteLine("Starting new UDP listener");
-
         }
         public void ReceiveUDP()
         {
@@ -48,21 +79,52 @@ namespace MemoryServer2
             {
                 try
                 {
-                    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 9100);
+                    IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
                     var data = udpServer.Receive(ref remoteEP);
-                    Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
+                    byte[] audio = new byte[320];
+                    Array.Copy(data, 4, audio, 0, 320);
+                    var index = BitConverter.ToInt32(data, 0);
 
-                    if (!users.ContainsKey(remoteEP))
+                    //Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
+                    SocketAddress sa = remoteEP.Serialize();
+
+                    lock (this)
                     {
-                        List<byte[]> buffer = new List<byte[]>();
-                        users.Add(remoteEP, buffer);
+                        if (!users.ContainsKey(sa))
+                        {
+                            Client client = new Client();
+                            // users[sa].offset + index == current
+                            client.offset = current - index;
+                            client.avgTimeAhead = current * 10 - stopwatch.ElapsedMilliseconds;
+                            users.Add(sa, client);
+                        }
+                        int targetFrame = users[sa].offset + index;
+                        double timeAhead = Math.Max(-50, targetFrame * 10 - stopwatch.ElapsedMilliseconds);
+                        users[sa].missedFactor = 0.99 * users[sa].missedFactor
+                            + (timeAhead < 0 ? 0.01 : 0.0);
+                        users[sa].avgTimeAhead = 0.99 * users[sa].avgTimeAhead + 0.01 * timeAhead;
+                        /*Console.WriteLine("index: " + index);
+                        Console.WriteLine("offset: " + users[sa].offset);
+                        Console.WriteLine("we have this much time: " + timeAhead);
+                        Console.WriteLine("avg time: " + users[sa].avgTimeAhead);
+                        Console.WriteLine("factor: " + users[sa].missedFactor);*/
+
+                        if (users[sa].missedFactor > 0.1)
+                        {
+                            users[sa].offset = current - index;
+                            targetFrame = current;
+                            users[sa].missedFactor *= 0.5;
+                        }
+                        if (users[sa].avgTimeAhead > 30.0)
+                        {
+                            users[sa].offset--;
+                            targetFrame--;
+                            users[sa].avgTimeAhead -= 10.0;
+                        }
+
+                        users[sa].buffer[targetFrame] = audio;
                     }
-                    else
-                    {
-                        List<byte[]> newBuff = users[remoteEP];
-                        newBuff.Add(data);
-                        users[remoteEP] = newBuff;
-                    }
+
                 }
                 catch (Exception e)
                 {
@@ -71,8 +133,69 @@ namespace MemoryServer2
             }
         }
 
+        public void SendAudioBack()
+        {
+            System.Diagnostics.Process.GetCurrentProcess().PriorityClass = System.Diagnostics.ProcessPriorityClass.RealTime;
+            stopwatch.Start();
+            while (true)
+            {
 
-        public void HandleClient(TcpClient client, string playerID, string password)
+                long nextTime = current * 10;
+                WinApi.TimeBeginPeriod(1);
+                //Console.WriteLine("Time until next frame 2: " + (nextTime - stopwatch.ElapsedMilliseconds));
+                while (stopwatch.ElapsedMilliseconds < nextTime)
+                {
+                    //Console.WriteLine("Time until next frame: " + (nextTime - stopwatch.ElapsedMilliseconds));
+                    Thread.Sleep(1);
+                    //Thread.Yield();                    
+                }
+                WinApi.TimeEndPeriod(1);
+                //Console.WriteLine("woke up late by: " + (stopwatch.ElapsedMilliseconds - nextTime));
+                lock (this)
+                {
+                    var keys = users.Keys;
+
+                    foreach (var key in keys)
+                    {
+                        List<Pcm16BitToSampleProvider> sources = new List<Pcm16BitToSampleProvider>();
+                        foreach (var k in keys)
+                        {
+                            if (key != k &&
+                                users[k].buffer.TryGetValue(current, out byte[] sample))
+                            {
+                                var ms = new MemoryStream(sample);
+                                var rs = new RawSourceWaveStream(ms, new WaveFormat(16000, 16, 1));
+                                var r = new Pcm16BitToSampleProvider(rs);
+                                sources.Add(r);
+                            }
+                        }
+                        if (sources.Count != 0)
+                        {
+                            var mixer = new MixingSampleProvider(sources);
+                            byte[] index = BitConverter.GetBytes(current);
+                            byte[] data = new byte[324];
+                            Array.Copy(index, data, 4);
+                            mixer.ToWaveProvider16().Read(data, 4, 320);
+                            IPEndPoint ep = new IPEndPoint(0, 0);
+                            ep = (IPEndPoint)ep.Create(key);
+                            udpServer.Send(data, data.Length, ep);
+                        }
+                    }
+                    if (users.Count == 0)
+                    {
+                        current = 0;
+                        stopwatch.Restart();
+                    }
+                    else
+                    {
+                        current++;
+                    }
+
+                }
+            }
+        }
+
+        public void HandleClient(TcpClient client, string playerID, string password, int udpPort)
         {
             NetworkStream stream = client.GetStream();
 
@@ -99,7 +222,7 @@ namespace MemoryServer2
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    //Console.WriteLine(e);
                     Console.WriteLine("Disconnecting the player " + playerID);
                     sData = "lrm";
                 }
@@ -116,6 +239,10 @@ namespace MemoryServer2
                     inRoom = false;
                 }
             }
+            IPEndPoint ep = (IPEndPoint)client.Client.RemoteEndPoint;
+            ep.Port = udpPort;
+            var sa = ep.Serialize();
+            users.Remove(sa);
         }
         public string Encode()
         {
