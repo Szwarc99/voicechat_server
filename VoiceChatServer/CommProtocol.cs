@@ -44,8 +44,7 @@ namespace VoiceChatServer
                 byte[] iv = rsa.Decrypt(Convert.FromBase64String(msg), false);
 
                 aesParams ap = new aesParams(key, iv);
-                clientKeys.Add(stream, ap);
-                Write(stream, "aes ok");
+                clientKeys.Add(stream, ap);                
             }
         }
 
@@ -109,7 +108,7 @@ namespace VoiceChatServer
 
                 byte[] bytes = Convert.FromBase64String(str);
 
-                string command = Decrypt(bytes, clientKeys[stream].key, clientKeys[stream].iv);
+                string command = Decrypt(bytes, clientKeys[stream].key, clientKeys[stream].iv);               
 
                 return command;
             }

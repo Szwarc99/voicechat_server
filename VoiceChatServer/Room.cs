@@ -48,9 +48,7 @@ namespace VoiceChatServer
         Thread mixerThread;
         int current = 0;
         Stopwatch stopwatch = new Stopwatch();
-
         public Dictionary<SocketAddress, Client> users = new Dictionary<SocketAddress, Client>();
-
         UdpClient udpServer;
         public Room(int id, bool isPrivate, string password)
         {
@@ -94,8 +92,7 @@ namespace VoiceChatServer
                     {
                         if (!users.ContainsKey(sa))
                         {
-                            Client client = new Client();
-                            // users[sa].offset + index == current
+                            Client client = new Client();                            
                             client.offset = current - index;
                             client.avgTimeAhead = current * 10 - stopwatch.ElapsedMilliseconds;
                             users.Add(sa, client);                            
@@ -104,12 +101,7 @@ namespace VoiceChatServer
                         double timeAhead = Math.Max(-50, targetFrame * 10 - stopwatch.ElapsedMilliseconds);
                         users[sa].missedFactor = 0.99 * users[sa].missedFactor
                             + (timeAhead < 0 ? 0.01 : 0.0);
-                        users[sa].avgTimeAhead = 0.99 * users[sa].avgTimeAhead + 0.01 * timeAhead;
-                        /*Console.WriteLine("index: " + index);
-                        Console.WriteLine("offset: " + users[sa].offset);
-                        Console.WriteLine("we have this much time: " + timeAhead);
-                        Console.WriteLine("avg time: " + users[sa].avgTimeAhead);
-                        Console.WriteLine("factor: " + users[sa].missedFactor);*/
+                        users[sa].avgTimeAhead = 0.99 * users[sa].avgTimeAhead + 0.01 * timeAhead;                        
 
                         if (users[sa].missedFactor > 0.1)
                         {
@@ -143,22 +135,13 @@ namespace VoiceChatServer
             stopwatch.Start();
             while (true)
             {
-
                 long nextTime = current * 10;
-                WinApi.TimeBeginPeriod(1);
-                //Console.WriteLine("Time until next frame 2: " + (nextTime - stopwatch.ElapsedMilliseconds));
-                
-                //Console.WriteLine("time: " + stopwatch.ElapsedMilliseconds + ", " + "nextTime: " + nextTime);
-                //this was the problem all along <
+                WinApi.TimeBeginPeriod(1);             
                 while (stopwatch.ElapsedMilliseconds <= nextTime)
-                {
-                    //Console.WriteLine("Time until next frame: " + (nextTime - stopwatch.ElapsedMilliseconds));
-                    Thread.Sleep(1);
-                    //Thread.Yield();                    
-                }
-                //Thread.Sleep(1);
+                {                    
+                    Thread.Sleep(1);                    
+                }                
                 WinApi.TimeEndPeriod(1);
-                //Console.WriteLine("woke up late by: " + (stopwatch.ElapsedMilliseconds - nextTime));
                 
                 lock (this)
                 {
@@ -194,8 +177,7 @@ namespace VoiceChatServer
                     foreach (var key in keys)
                     {
                         summedBuffers = users[key].buffer.Count;
-                        users[key].buffer.Remove(current);
-                        //Console.WriteLine(key + " buffers size: " + summedBuffers);                        
+                        users[key].buffer.Remove(current);                        
                     }
                     if (users.Count == 0)
                     {

@@ -25,7 +25,7 @@ namespace VoiceChatServer
 
         public ServerTCP(int port)
         {
-            _server = new TcpListener(IPAddress.Parse("10.99.201.42"), port);
+            _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
             _server.Start();
             _isRunning = true;
         }
