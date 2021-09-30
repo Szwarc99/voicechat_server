@@ -8,6 +8,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Text;
 using System.Threading;
 
 namespace VoiceChatServer
@@ -42,6 +43,7 @@ namespace VoiceChatServer
         public int id;
         private string password;
         public bool isPrivate;
+        public Dictionary<SocketAddress, string> usernames = new Dictionary<SocketAddress, string>();
         Thread listenerThread;
         Thread mixerThread;
         int current = 0;
@@ -85,7 +87,7 @@ namespace VoiceChatServer
                     Array.Copy(data, 4, audio, 0, 320);
                     var index = BitConverter.ToInt32(data, 0);
 
-                    //Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
+                    Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
                     SocketAddress sa = remoteEP.Serialize();
 
                     lock (this)
@@ -96,7 +98,7 @@ namespace VoiceChatServer
                             // users[sa].offset + index == current
                             client.offset = current - index;
                             client.avgTimeAhead = current * 10 - stopwatch.ElapsedMilliseconds;
-                            users.Add(sa, client);
+                            users.Add(sa, client);                            
                         }
                         int targetFrame = users[sa].offset + index;
                         double timeAhead = Math.Max(-50, targetFrame * 10 - stopwatch.ElapsedMilliseconds);
@@ -215,7 +217,13 @@ namespace VoiceChatServer
 
             if (this.password == password)
             {
-
+                IPEndPoint epp = (IPEndPoint)client.Client.RemoteEndPoint;
+                epp.Port = udpPort;
+                var saa = epp.Serialize();
+                lock (this)
+                { 
+                    usernames.Add(saa, playerID);
+                }
             }
             else
             {
@@ -235,21 +243,27 @@ namespace VoiceChatServer
                     sData = CommProtocol.Read(stream);
                 }
                 catch (Exception e)
-                {
-                    //Console.WriteLine(e);
-                    Console.WriteLine("Disconnecting the player " + playerID);
+                {                    
+                    Console.WriteLine("User " + playerID + " is leaving room "+ id);
                     sData = "lrm";
                 }
                 if (sData != "noop") { Console.WriteLine(sData); }
 
                 string[] logData = CommProtocol.CheckMessage(sData);
 
-                if (sData == "noop")
+                if (sData == "pull")
                 {
-
+                    StringBuilder sb = new StringBuilder();
+                    sb.Append("pull");
+                    sb.Append(" " + usernames.Count);
+                    foreach (var p in usernames)
+                    {
+                        sb.Append(" " + p.Value);
+                    }
+                    CommProtocol.Write(stream,sb.ToString());
                 }
                 else if (logData[0] == "lrm")
-                {
+                {                    
                     inRoom = false;
                 }
             }
@@ -259,7 +273,7 @@ namespace VoiceChatServer
             lock (this)
             {
                 users.Remove(sa);
-                Console.WriteLine("users left: " + users.Count);
+                usernames.Remove(sa);
             }
         }
         public string Encode()

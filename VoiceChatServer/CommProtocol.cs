@@ -45,6 +45,7 @@ namespace VoiceChatServer
 
                 aesParams ap = new aesParams(key, iv);
                 clientKeys.Add(stream, ap);
+                Write(stream, "aes ok");
             }
         }
 

@@ -20,11 +20,12 @@ namespace VoiceChatServer
         private List<string> loggedUsers = new List<string>();
 
         private ConcurrentDictionary<int, Room> roomDict = new ConcurrentDictionary<int, Room>();
+        private ConcurrentDictionary<string, int> roomOwners = new ConcurrentDictionary<string, int>();
         private int nextRoomId = 0;
 
         public ServerTCP(int port)
         {
-            _server = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
+            _server = new TcpListener(IPAddress.Parse("10.99.201.42"), port);
             _server.Start();
             _isRunning = true;
         }
@@ -37,11 +38,8 @@ namespace VoiceChatServer
         {
             while (_isRunning)
             {
-                // wait for client connection
-                // object[] vs = new object[2];
-                TcpClient newClient = _server.AcceptTcpClient();
-                //vs[0] = newClient;
-                //vs[1] = rooms;
+                // wait for client connection                
+                TcpClient newClient = _server.AcceptTcpClient();                
                 // client found.
                 // create a thread to handle communication
 
@@ -60,76 +58,49 @@ namespace VoiceChatServer
                 });
                 t.Start();
             }
-        }
-
-        static string Hash(string password)
-        {
-            using (SHA1Managed sha1 = new SHA1Managed())
-            {
-                var hash = sha1.ComputeHash(Encoding.UTF8.GetBytes(password));
-                var sb = new StringBuilder(hash.Length * 2);
-
-                foreach (byte b in hash)
-                {
-                    sb.Append(b.ToString("X2"));
-                }
-
-                return sb.ToString();
-            }
-        }
+        }       
 
         public void HandleClient(TcpClient client)
         {
             NetworkStream stream = client.GetStream();
             CommProtocol.setAes(stream);
-
-
-            // sets two streams
-            //StreamWriter sWriter = new StreamWriter(client.GetStream(), Encoding.ASCII);
-            //StreamReader sReader = new StreamReader(client.GetStream(), Encoding.ASCII);
-            // you could use the NetworkStream to read and write, 
-            // but there is no forcing flush, even when requested
-
+            
             bool clientConnected = true;
-            /*DatabaseConnector dc = new DatabaseConnector();
-            bool logged = false;
-            string playerID = "";*/
-
-            CommProtocol.Write(stream, "test");
+            string userID = "";
 
             while (clientConnected)
-            {
-                Console.WriteLine("loop");
-                string userID;
+            { 
                 string sData = "";
-
                 try
-                {
+                {                    
                     sData = CommProtocol.Read(stream);
                     Console.WriteLine(sData);
                 }
                 catch (Exception e)
-                {
-                    //Console.WriteLine(e);
-                    sData = "logout";
+                {                    
+                    sData = "dsc";
                 }
                 string[] logData = CommProtocol.CheckMessage(sData);
 
                 var rooms = this.roomDict.ToArray().Select(x => x.Value).ToList();
                 rooms.Sort((x, y) => x.id - y.id);
 
-                if (sData == "logout")
+                if (sData == "dsc")
                 {
                     clientConnected = false;
+                    lock(loggedUsers)
+                    {
+                        loggedUsers.Remove(userID);
+                    }
                 }
-                if (logData[0] == "user")
-                {
+                if (logData[0] == "con")
+                {                    
                     userID = logData[1];
                     lock (loggedUsers)
                     {
                         loggedUsers.Add(userID);
-                    }
-                    CommProtocol.Write(stream, "ok");
+                    }                    
+                    CommProtocol.Write(stream, "con ok");
                 }
                 if (logData[0] == "ref")
                 {
@@ -143,14 +114,21 @@ namespace VoiceChatServer
                 }
                 else if (logData[0] == "crm")
                 {
-                    int id = getNextId();
-                    roomDict.TryAdd(id, new Room(id, bool.Parse(logData[1]), logData[2]));
-                    CommProtocol.Write(stream, id.ToString());
+                    if (!roomOwners.ContainsKey(userID))
+                    {
+                        int id = getNextId();
+                        roomDict.TryAdd(id, new Room(id, bool.Parse(logData[1]), logData[2]));
+                        roomOwners.TryAdd(userID, id);
+                        string str = "crm " + id.ToString();
+                        CommProtocol.Write(stream, str);
+                    }
+                    else CommProtocol.Write(stream, "error room_already_created");
                 }
                 else if (logData[0] == "jrm")
                 {
                     string pwd = "";
                     int port;
+
                     if (logData.Length == 5)
                     {
                         pwd = logData[3];
@@ -160,14 +138,8 @@ namespace VoiceChatServer
                         port = Int32.Parse(logData[3]);
                     Console.WriteLine(port);
                     rooms[int.Parse(logData[1])].HandleClient(client, logData[2], pwd, port);
-                }
-                /*else if (logData[0] == "chngpass")
-                {
-                    dc.editUserPassword(logData[1], Hash(logData[1] + logData[2]));
-                    CommProtocol.Write(stream, "ok");
-                }
-                */
-            }
+                }                
+            }            
         }
     }
 }
