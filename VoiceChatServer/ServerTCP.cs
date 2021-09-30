@@ -68,6 +68,7 @@ namespace VoiceChatServer
             bool clientConnected = true;
             string userID = "";
 
+            CommProtocol.Write(stream, "test");
             while (clientConnected)
             { 
                 string sData = "";

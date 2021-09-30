@@ -81,12 +81,16 @@ namespace VoiceChatServer
                 {
                     IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
                     var data = udpServer.Receive(ref remoteEP);
-                    byte[] audio = new byte[320];
-                    Array.Copy(data, 4, audio, 0, 320);
-                    var index = BitConverter.ToInt32(data, 0);
-
-                    Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
+                    //Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
                     SocketAddress sa = remoteEP.Serialize();
+                    Console.WriteLine(usernames[sa]);
+
+                    var data2 = CommProtocol.DecryptUDP(data, CommProtocol.clientKeysUDP[sa].key, CommProtocol.clientKeysUDP[sa].iv);
+                    Console.WriteLine("data2 length: " + data2.Length);
+                    
+                    byte[] audio = new byte[320];
+                    Array.Copy(data2, 4, audio, 0, 320);
+                    var index = BitConverter.ToInt32(data2, 0);
 
                     lock (this)
                     {
@@ -169,7 +173,9 @@ namespace VoiceChatServer
                             mixer.ToWaveProvider16().Read(data, 4, 320);
                             IPEndPoint ep = new IPEndPoint(0, 0);
                             ep = (IPEndPoint)ep.Create(key);
-                            udpServer.Send(data, data.Length, ep);
+
+                            var data2 = CommProtocol.EncryptUDP(data, CommProtocol.clientKeysUDP[key].key, CommProtocol.clientKeysUDP[key].iv);                            
+                            udpServer.Send(data2, data2.Length, ep);
                         }
                     }
 
@@ -205,6 +211,7 @@ namespace VoiceChatServer
                 lock (this)
                 { 
                     usernames.Add(saa, playerID);
+                    CommProtocol.clientKeysUDP.Add(saa, CommProtocol.clientKeys[stream]);
                 }
             }
             else
