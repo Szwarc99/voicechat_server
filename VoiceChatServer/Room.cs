@@ -263,6 +263,11 @@ namespace VoiceChatServer
             {
                 users.Remove(sa);
                 usernames.Remove(sa);
+                
+            }
+            lock(CommProtocol.clientKeysUDP)
+            {
+                CommProtocol.clientKeysUDP.Remove(sa);
             }
         }
         public string Encode()

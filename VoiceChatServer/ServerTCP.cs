@@ -122,6 +122,10 @@ namespace VoiceChatServer
                         {
                             loggedUsers.Remove(userID);
                         }
+                        lock(CommProtocol.clientKeys)
+                        {
+                            CommProtocol.clientKeys.Remove(stream);
+                        }
                     }
                     if (logData[0] == "ref")
                     {
