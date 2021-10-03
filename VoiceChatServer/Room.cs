@@ -83,10 +83,10 @@ namespace VoiceChatServer
                     var data = udpServer.Receive(ref remoteEP);
                     //Console.WriteLine(remoteEP.ToString() + ": " + data.Length);
                     SocketAddress sa = remoteEP.Serialize();
-                    Console.WriteLine(usernames[sa]);
+                    //Console.WriteLine(remoteEP.Port);
 
                     var data2 = CommProtocol.DecryptUDP(data, CommProtocol.clientKeysUDP[sa].key, CommProtocol.clientKeysUDP[sa].iv);
-                    Console.WriteLine("data2 length: " + data2.Length);
+                    //Console.WriteLine("data2 length: " + data2.Length);
                     
                     byte[] audio = new byte[320];
                     Array.Copy(data2, 4, audio, 0, 320);
@@ -128,7 +128,7 @@ namespace VoiceChatServer
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    
                 }
             }
         }
@@ -208,19 +208,23 @@ namespace VoiceChatServer
                 IPEndPoint epp = (IPEndPoint)client.Client.RemoteEndPoint;
                 epp.Port = udpPort;
                 var saa = epp.Serialize();
+                Console.WriteLine(epp.Address);
                 lock (this)
-                { 
+                {
                     usernames.Add(saa, playerID);
+                }
+                lock(CommProtocol.clientKeysUDP)
+                {    
                     CommProtocol.clientKeysUDP.Add(saa, CommProtocol.clientKeys[stream]);
                 }
+                CommProtocol.Write(stream,"jrm ok");
             }
             else
             {
                 string error = "error wrong_password";
                 CommProtocol.Write(stream, error);
                 return;
-            }
-            CommProtocol.Write(stream, "ok");
+            }            
 
             bool inRoom = true;
 
